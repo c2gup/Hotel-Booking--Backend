@@ -1,8 +1,11 @@
 import { query } from "../config/database.js";
 import bcrypt from "bcrypt";
 import * as z from "zod";
+import jwt from "jsonwebtoken";
 
-// 1. Zod schema (validation only)
+import dotenv from "dotenv";
+dotenv.config();
+
 const userSchema = z.object({
   name: z.string().max(100),
   email: z.string().email(),
@@ -11,9 +14,13 @@ const userSchema = z.object({
   phone: z.string().optional(),
 });
 
+const userSchemaLogin = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
 export const signUp = async (req, res) => {
   try {
-    // 2. Validate request body
     const parsed = userSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -53,5 +60,56 @@ export const signUp = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Signup failed" });
+  }
+};
+
+export const login = async (req, res) => {
+  const parsed = userSchemaLogin.safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({
+      message: "Validation failed",
+      errors: parsed.error.errors,
+    });
+  }
+
+  try {
+    const { email, password } = parsed.data;
+
+    const result = await query("SELECT * FROM users WHERE email = $1", [email]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const user = result.rows[0];
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    // 3. Success
+    res.status(200).json({
+      success: true,
+      data: {
+        accessToken: token,
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+      error: null,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Login failed" });
   }
 };
