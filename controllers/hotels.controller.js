@@ -158,6 +158,14 @@ export const getHotelDetail = async (req, res) => {
   try {
     const hotelId = req.params.hotelId;
 
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        error: "UNAUTHORIZED",
+      });
+    }
+
     const result = await query(
       `SELECT 
         h.id AS hotel_id,
@@ -191,7 +199,6 @@ export const getHotelDetail = async (req, res) => {
       });
     }
 
-    // 🧠 Build response
     const hotel = {
       id: result.rows[0].hotel_id,
       ownerId: result.rows[0].owner_id,
@@ -205,7 +212,6 @@ export const getHotelDetail = async (req, res) => {
       rooms: [],
     };
 
-    // loop rooms
     result.rows.forEach((row) => {
       if (row.room_id) {
         hotel.rooms.push({

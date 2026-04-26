@@ -2,6 +2,7 @@ import express from "express";
 import { query } from "./config/database.js";
 import authRoutes from "./routes/auths.js";
 import hotels from "./routes/Hotel.routes.js";
+import booking from "./routes/booking.routes.js";
 
 const app = express();
 const port = 3000;
@@ -25,6 +26,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/hotels", hotels);
+app.use("/api/bookings", booking);
 
 app.listen(port, async () => {
   console.log(`Server running on ${port}`);

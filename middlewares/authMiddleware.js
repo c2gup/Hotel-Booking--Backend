@@ -15,6 +15,8 @@ export const authMiddleware = (req, res, next) => {
 
     req.user = decoded;
 
+    console.log("_>DECODE", decoded);
+
     next();
   } catch (error) {
     return res
@@ -22,5 +24,3 @@ export const authMiddleware = (req, res, next) => {
       .json({ success: false, data: null, error: "UNAUTHORIZED" });
   }
 };
-
-
