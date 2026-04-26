@@ -1,5 +1,7 @@
 import * as z from "zod";
 import { pool } from "../config/database.js";
+import { query } from "../config/database.js";
+
 
 const BookingSchema = z.object({
   roomId: z.string(),
@@ -8,7 +10,7 @@ const BookingSchema = z.object({
   guests: z.number(),
 });
 
-//learn this 
+//learn this
 export const booking = async (req, res) => {
   const client = await pool.connect(); // transaction
 
@@ -136,3 +138,57 @@ export const booking = async (req, res) => {
     client.release();
   }
 };
+
+//learn this
+export const getBooking = async (req, res) => {
+  try {
+    if (!req.user || !req.user.userId) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        error: "UNAUTHORIZED",
+      });
+    }
+
+    const userId = req.user.userId;
+
+    const result = await query(
+      `SELECT 
+        b.id,
+        b.room_id AS "roomId",
+        r.hotel_id AS "hotelId",
+        h.name AS "hotelName",
+        r.room_number AS "roomNumber",
+        r.room_type AS "roomType",
+        b.check_in_date AS "checkInDate",
+        b.check_out_date AS "checkOutDate",
+        b.guests,
+        b.total_price AS "totalPrice",
+        b.status,
+        b.booking_date AS "bookingDate"
+      FROM bookings b
+      JOIN rooms r ON b.room_id = r.id
+      JOIN hotels h ON r.hotel_id = h.id
+      WHERE b.user_id = $1
+      ORDER BY b.booking_date DESC`,
+      [userId],
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: result.rows,
+      error: null,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      data: null,
+      error: "Internal Server Error",
+    });
+  }
+};
+
+
+
+
