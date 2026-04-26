@@ -1,4 +1,3 @@
-import { query } from "../config/database.js";
 import * as z from "zod";
 import { pool } from "../config/database.js";
 
@@ -9,63 +8,7 @@ const BookingSchema = z.object({
   guests: z.number(),
 });
 
-// export const booking = async (req, res) => {
-//   if (!req.user) {
-//     return res.status(401).json({
-//       success: false,
-//       data: null,
-//       error: "UNAUTHORIZED",
-//     });
-//   }
-
-//   if (req.user.role !== "customer") {
-//     return res.status(403).json({
-//       success: false,
-//       data: null,
-//       error: "FORBIDDEN",
-//     });
-//   }
-
-//   const userId = req.user.userId;
-
-//   const parsedData = BookingSchema.safeParse(req.body);
-
-//   if (!parsedData.success) {
-//     return res.status(400).json({
-//       success: false,
-//       data: null,
-//       error: "INVALID_REQUEST",
-//     });
-//   }
-
-//   const { roomId, checkInDate, checkOutDate, guests } = parsedData.data;
-
-//   const roomfind = await query("SELECT * FROM rooms WHERE id = $1", [roomId]);
-
-//   if (roomfind.rows.length == 0) {
-//     return res.status(404).json({
-//       success: false,
-//       data: null,
-//       error: "ROOM_NOT_FOUND",
-//     });
-//   }
-
-//   console.log("rooms details ", roomfind.rows[0]);
-
-//   const result = await query(
-//     `INSERT INTO bookings (user_id, room_id, check_in_date, check_out_date, guests)
-//    VALUES ($1, $2, $3, $4, $5)
-//    RETURNING *`,
-//     [userId, roomId, checkInDate, checkOutDate, guests],
-//   );
-
-//   res.status().json({
-//     success: true,
-//     data: result.res[0],
-//     error: null,
-//   });
-// };
-
+//learn this 
 export const booking = async (req, res) => {
   const client = await pool.connect(); // transaction
 
