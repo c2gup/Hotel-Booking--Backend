@@ -153,3 +153,83 @@ export const addroomByOwner = async (req, res) => {
     });
   }
 };
+
+export const getHotelDetail = async (req, res) => {
+  try {
+    const hotelId = req.params.hotelId;
+
+    const result = await query(
+      `SELECT 
+        h.id AS hotel_id,
+        h.owner_id,
+        h.name,
+        h.description,
+        h.city,
+        h.country,
+        h.amenities,
+        h.rating,
+        h.total_reviews,
+
+        r.id AS room_id,
+        r.room_number,
+        r.room_type,
+        r.price_per_night,
+        r.max_occupancy
+
+      FROM hotels h
+      LEFT JOIN rooms r 
+      ON h.id = r.hotel_id
+      WHERE h.id = $1`,
+      [hotelId],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        data: null,
+        error: "HOTEL_NOT_FOUND",
+      });
+    }
+
+    // 🧠 Build response
+    const hotel = {
+      id: result.rows[0].hotel_id,
+      ownerId: result.rows[0].owner_id,
+      name: result.rows[0].name,
+      description: result.rows[0].description,
+      city: result.rows[0].city,
+      country: result.rows[0].country,
+      amenities: result.rows[0].amenities,
+      rating: result.rows[0].rating,
+      totalReviews: result.rows[0].total_reviews,
+      rooms: [],
+    };
+
+    // loop rooms
+    result.rows.forEach((row) => {
+      if (row.room_id) {
+        hotel.rooms.push({
+          id: row.room_id,
+          roomNumber: row.room_number,
+          roomType: row.room_type,
+          pricePerNight: row.price_per_night,
+          maxOccupancy: row.max_occupancy,
+        });
+      }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: hotel,
+      error: null,
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      data: null,
+      error: "INTERNAL_SERVER_ERROR",
+    });
+  }
+};
