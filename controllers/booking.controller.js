@@ -2,7 +2,6 @@ import * as z from "zod";
 import { pool } from "../config/database.js";
 import { query } from "../config/database.js";
 
-
 const BookingSchema = z.object({
   roomId: z.string(),
   checkInDate: z.coerce.date(),
@@ -189,6 +188,95 @@ export const getBooking = async (req, res) => {
   }
 };
 
+export const bookingCancle = async (req, res) => {
+  try {
+    if (!req.user || !req.user.userId) {
+      return res.status(403).json({
+        success: false,
+        data: null,
+        error: "UNAUTHORIZED",
+      });
+    }
+    const bookId = req.params.bookingId;
 
+    if (!bookId) {
+      return res.status().json({
+        success: false,
+        data: null,
+        error: "BOOKING_NOT_FOUND",
+      });
+    }
+    const result = await query(`SELECT * FROM bookings WHERE id = $1`, [
+      bookId,
+    ]);
+    console.log(result.rows[0]);
+    if (req.user.userId !== result.rows[0].user_id) {
+      return res.status(401).json({
+        success: false,
+        data: null,
+        error: "FORBIDDEN",
+      });
+    }
 
+    // 4. Ownership check
+    if (req.user.userId !== booking.user_id) {
+      return res.status(403).json({
+        success: false,
+        data: null,
+        error: "FORBIDDEN",
+      });
+    }
 
+    // 5. Already cancelled check
+    if (booking.status === "cancelled") {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        error: "ALREADY_CANCELLED",
+      });
+    }
+
+    const now = new Date();
+    const checkIn = new Date(booking.check_in_date);
+
+    const diffInMs = checkIn - now;
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return res.status(400).json({
+        success: false,
+        data: null,
+        error: "CANCELLATION_DEADLINE_PASSED",
+      });
+    }
+
+    // 7. Update booking
+    const updated = await query(
+      `UPDATE bookings 
+       SET status = 'cancelled', cancelled_at = NOW()
+       WHERE id = $1
+       RETURNING id, status, cancelled_at`,
+      [bookId],
+    );
+
+    const updatedBooking = updated.rows[0];
+
+    // 8. Success response
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: updatedBooking.id,
+        status: updatedBooking.status,
+        cancelledAt: updatedBooking.cancelled_at,
+      },
+      error: null,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      data: null,
+      error: "INTERNAL_SERVER_ERROR",
+    });
+  }
+};

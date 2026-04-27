@@ -1,9 +1,9 @@
 import express from "express";
 import { query } from "./config/database.js";
-import authRoutes from "./routes/auths.js";
+import authRoutes from "./routes/auths.routes.js";
 import hotels from "./routes/Hotel.routes.js";
 import booking from "./routes/booking.routes.js";
-
+import reviews from "./routes/reviews.routes.js";
 const app = express();
 const port = 3000;
 
@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/hotels", hotels);
 app.use("/api/bookings", booking);
+app.use("/api/reviews", reviews);
 
 app.listen(port, async () => {
   console.log(`Server running on ${port}`);
